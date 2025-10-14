@@ -41,4 +41,438 @@
     .inline{display:inline-flex;gap:8px;align-items:center}
     .divider{width:1px;height:28px;background:var(--border);margin:0 6px}
     select#demoSelect{min-width:180px}
-    @media (max-width:720px){.grid{gap:18px}.g-9,.g-8,.g-6,.g-4,.g-3,.g-2{
+    @media (max-width:720px){.grid{gap:18px}.g-9,.g-8,.g-6,.g-4,.g-3,.g-2{grid-column:span 12}}
+    @media print{
+      body{background:#fff;color:#000}
+      .no-print{display:none!important}
+      .card{border:1px solid #333;background:#fff;color:#000}
+      input,select,textarea{border:1px solid #888;background:#fff;color:#000}
+      .pill{border-color:#888;color:#000}
+      a{color:#000}
+    }
+  </style>
+  <!-- PNG出力用（CDN） -->
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="inline">
+        <h1>巡回・職務質問記録票</h1>
+        <span id="recordId" class="pill">ID: —</span>
+      </div>
+      <span class="badge">岩松県警察 / 現場入力用フォーム</span>
+    </div>
+
+    <!-- 基本情報 -->
+    <div class="card">
+      <div class="grid">
+        <div class="g-3"><label>所属</label><input id="aff" placeholder="例：響野署 地域課"></div>
+        <div class="g-2"><label>階級</label><input id="rank" placeholder="例：巡査長"></div>
+        <div class="g-3"><label>氏名</label><input id="name" placeholder="例：岩松 太郎"></div>
+        <div class="g-2"><label>同行員</label><input id="mates" placeholder="例：2名（氏名略）"></div>
+        <div class="g-2"><label>無線符号／車両</label><input id="unit" placeholder="例：響野21／パト1"></div>
+      </div>
+      <div class="grid">
+        <div class="g-4">
+          <label>実施区分</label>
+          <select id="type">
+            <option>巡回連絡</option><option selected>職務質問</option><option>補導</option><option>所持品検査</option>
+          </select>
+        </div>
+        <div class="g-4"><label>開始時刻</label><input id="tStart" type="datetime-local"></div>
+        <div class="g-4"><label>終了時刻</label><input id="tEnd" type="datetime-local"></div>
+        <div class="g-12 help" id="durText">所要時間：—</div>
+      </div>
+    </div>
+
+    <!-- 場所（地図リンクなし / 天候の例は「晴れ」） -->
+    <div class="card">
+      <div class="grid">
+        <div class="g-9"><label>場所（住所・目標物）</label><input id="place" placeholder="例：響野市中央1-2-3 ○○前 歩道上"></div>
+        <div class="g-3"><label>天候</label><input id="weather" placeholder="例：晴れ"></div>
+      </div>
+    </div>
+
+    <!-- 対象者情報 -->
+    <div class="card">
+      <fieldset class="g-12">
+        <legend>対象者情報</legend>
+        <div class="grid">
+          <div class="g-4"><label>氏名（仮名可）</label><input id="pName"></div>
+          <div class="g-2"><label>性別</label>
+            <select id="pSex"><option>男</option><option>女</option><option>その他</option><option>不詳</option></select>
+          </div>
+          <div class="g-2"><label>年齢</label><input id="pAge" type="number" min="0"></div>
+          <div class="g-2"><label>国籍</label><input id="pNat" placeholder="例：日本"></div>
+          <div class="g-2"><label>同行者数</label><input id="pComp" type="number" min="0" value="0"></div>
+
+          <div class="g-4"><label>職業・所属等</label><input id="pJob"></div>
+          <div class="g-4"><label>連絡先</label><input id="pContact"></div>
+          <div class="g-4"><label>本人確認方法</label><input id="pID" placeholder="例：運転免許証／学生証"></div>
+        </div>
+      </fieldset>
+
+      <div class="hr"></div>
+
+      <!-- 経過：統合（理由・質問応答・所持品検査） -->
+      <div class="grid">
+        <div class="g-12">
+          <label>経過（理由・質問応答・所持品検査を含む）</label>
+          <textarea id="progress" class="tall" placeholder="【観察事実・実施理由】…&#10;&#10;【質問・回答の要旨（時系列）】…&#10;&#10;【所持品検査】…"></textarea>
+          <div class="hint">※ 長文可。必要に応じて小見出し（【理由】【Q/A】【所持品】など）を残してください。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 照会・措置（無線照会番号なし） -->
+    <div class="card">
+      <div class="grid">
+        <div class="g-6"><label>関連事件番号等</label><input id="caseNo" placeholder="例：令和7年（フ）第123号"></div>
+        <div class="g-6"><label>証拠・写真管理番号</label><input id="eviNo" placeholder="例：P-IMG-0001"></div>
+      </div>
+      <div class="grid">
+        <div class="g-6"><label>照会結果</label>
+          <select id="result"><option selected>異常なし</option><option>手配該当</option><option>前歴照会あり</option><option>被疑事実発覚</option></select>
+        </div>
+        <div class="g-6"><label>措置</label>
+          <select id="measure"><option selected>指導・警告</option><option>補導</option><option>任意同行</option><option>検挙・逮捕</option><option>他機関連携・引継ぎ</option><option>不処置</option></select>
+        </div>
+      </div>
+
+      <fieldset>
+        <legend>手続の適正（チェック）</legend>
+        <div class="row">
+          <label class="row" style="gap:6px"><input type="checkbox" id="cShowID"> 標章・身分証の呈示</label>
+          <label class="row" style="gap:6px"><input type="checkbox" id="cPurpose"> 目的・理由の告知</label>
+          <label class="row" style="gap:6px"><input type="checkbox" id="cVoluntary"> 任意性の説明（停止・同行）</label>
+          <label class="row" style="gap:6px"><input type="checkbox" id="cConsent"> 所持品検査の同意確認</label>
+          <label class="row" style="gap:6px"><input type="checkbox" id="cRecord"> 録音・録画の有無を確認</label>
+        </div>
+      </fieldset>
+
+      <div class="grid" style="margin-top:12px">
+        <div class="g-12"><label>特記事項（安全配慮・身体拘束の有無等）</label><textarea id="note"></textarea></div>
+      </div>
+    </div>
+
+    <!-- 操作：ここに記入例UIを追加 -->
+    <div class="card no-print">
+      <div class="btns">
+        <button class="primary" id="btnPreview">プレビュー/印刷</button>
+        <button class="ok" id="btnSave">下書きを保存</button>
+        <button id="btnLoad">下書きを読込</button>
+        <button id="btnJSON">JSONを書き出し</button>
+        <button class="ghost" id="btnMD">Markdownをコピー</button>
+        <button id="btnPNG">PNGを書き出し</button>
+
+        <span class="divider"></span>
+
+        <!-- ★ 記入例呼び出しエリア（この位置に設置） -->
+        <span class="inline">
+          <label for="demoSelect" class="help">記入例:</label>
+          <select id="demoSelect" title="記入例テンプレート">
+            <option value="nolight">無灯火自転車</option>
+            <option value="fight">喧嘩・口論</option>
+            <option value="parking">駐車苦情</option>
+            <option value="noise">騒音・迷惑行為</option>
+          </select>
+          <button id="btnDemoApply">適用</button>
+          <button id="btnDemoRandom">ランダム</button>
+          <button id="btnDemoClear">例をクリア</button>
+        </span>
+
+        <span class="divider"></span>
+
+        <button class="warn" id="btnClear">全消去</button>
+        <span class="help">※ PNGはプレビュー領域を画像化します（先にプレビューしてください）。</span>
+      </div>
+    </div>
+
+    <!-- プレビュー -->
+    <div class="card" id="preview" style="display:none">
+      <div id="previewBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (q)=>document.querySelector(q);
+    const fields = [
+      'aff','rank','name','mates','unit','type','tStart','tEnd','place','weather',
+      'pName','pSex','pAge','pNat','pComp','pJob','pContact','pID',
+      'progress','caseNo','eviNo','result','measure','note'
+    ];
+    const checks = ['cShowID','cPurpose','cVoluntary','cConsent','cRecord'];
+    const LSKEY = 'iwamatsu_stop_question_draft_v6';
+
+    function genId(){
+      const d=new Date(),p=n=>String(n).padStart(2,'0');
+      return `SQ-${d.getFullYear().toString().slice(-2)}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;
+    }
+    function setRecordId(){ $('#recordId').textContent = 'ID: ' + genId(); }
+
+    function calcDuration(){
+      const s=new Date($('#tStart').value), e=new Date($('#tEnd').value);
+      let text='所要時間：—';
+      if(!isNaN(s)&&!isNaN(e)&&e>s){
+        const mins=Math.round((e-s)/60000), h=Math.floor(mins/60), m=mins%60;
+        text=`所要時間：${h? h+'時間' : ''}${m}分（計${mins}分）`;
+      }
+      $('#durText').textContent=text;
+    }
+    ['#tStart','#tEnd'].forEach(sel=>{
+      document.addEventListener('change',ev=>{ if(ev.target && ev.target.matches(sel)) calcDuration(); });
+    });
+
+    function toObj(){
+      const o={}; fields.forEach(k=> o[k] = ($('#'+k) instanceof HTMLTextAreaElement? $('#'+k).value.trim(): $('#'+k).value||''));
+      checks.forEach(k=> o[k] = $('#'+k).checked);
+      o['recordId']=$('#recordId').textContent.replace('ID: ','');
+      return o;
+    }
+    function applyObj(o){
+      for(const [k,v] of Object.entries(o)){ const el=$('#'+k); if(!el) continue;
+        if(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement){
+          if(el.type==='checkbox') el.checked=!!v; else el.value = v ?? '';
+        }
+      }
+      if('cShowID' in o) $('#cShowID').checked=!!o.cShowID;
+      if('cPurpose' in o) $('#cPurpose').checked=!!o.cPurpose;
+      if('cVoluntary' in o) $('#cVoluntary').checked=!!o.cVoluntary;
+      if('cConsent' in o) $('#cConsent').checked=!!o.cConsent;
+      if('cRecord' in o) $('#cRecord').checked=!!o.cRecord;
+      calcDuration();
+    }
+    function validate(o){
+      const need=['aff','name','type','tStart','place'];
+      const miss=need.filter(k=>!o[k]);
+      if(miss.length){ alert('未入力があります：'+miss.join(', ')); return false; }
+      return true;
+    }
+
+    function toMarkdown(o){
+      const b = x=> x?'✔':'—';
+      return `# 巡回・職務質問記録票（${o.recordId}）\n\n`+
+        `**所属**: ${o.aff}　**階級**: ${o.rank||''}　**氏名**: ${o.name}　**同行員**: ${o.mates||''}　**無線符号/車両**: ${o.unit||''}\n\n`+
+        `**実施区分**: ${o.type}　**開始**: ${o.tStart}　**終了**: ${o.tEnd||''}\n`+
+        `**場所**: ${o.place}　**天候**: ${o.weather||''}\n\n`+
+        `## 対象者\n氏名: ${o.pName||''}　性別: ${o.pSex||''}　年齢: ${o.pAge||''}　国籍: ${o.pNat||''}　同行者数: ${o.pComp||''}\n`+
+        `職業: ${o.pJob||''}　連絡先: ${o.pContact||''}　本人確認: ${o.pID||''}\n\n`+
+        `## 経過（理由・質問応答・所持品検査）\n${o.progress||''}\n\n`+
+        `## 照会・措置\n関連事件番号: ${o.caseNo||''}　証拠・写真管理: ${o.eviNo||''}\n`+
+        `照会結果: ${o.result||''}　措置: ${o.measure||''}\n\n`+
+        `## 手続チェック\n標章呈示:${b(o.cShowID)}  目的告知:${b(o.cPurpose)}  任意性説明:${b(o.cVoluntary)}  同意確認:${b(o.cConsent)}  録音録画確認:${b(o.cRecord)}\n\n`+
+        `## 特記事項\n${o.note||''}\n`;
+    }
+
+    function renderPreview(o){
+      const esc=s=>(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+      const nl2br=s=>(s||'').replace(/\n/g,'<br>');
+      const b=x=>x?'✔':'—';
+      const html = `
+        <div class="grid">
+          <div class="g-12"><strong>${o.recordId}</strong></div>
+          <div class="g-12">所属：${esc(o.aff)}　階級：${esc(o.rank)}　氏名：${esc(o.name)}　同行員：${esc(o.mates)}　無線符号/車両：${esc(o.unit)}</div>
+          <div class="g-12">区分：${esc(o.type)}　開始：${esc(o.tStart)}　終了：${esc(o.tEnd||'')}</div>
+          <div class="g-12">場所：${esc(o.place)}　天候：${esc(o.weather)}</div>
+        </div>
+        <div class="hr"></div>
+        <div class="grid">
+          <div class="g-12"><strong>対象者</strong></div>
+          <div class="g-12">氏名：${esc(o.pName)}　性別：${esc(o.pSex)}　年齢：${esc(o.pAge)}　国籍：${esc(o.pNat)}　同行者数：${esc(o.pComp)}</div>
+          <div class="g-12">職業：${esc(o.pJob)}　連絡先：${esc(o.pContact)}　本人確認：${esc(o.pID)}</div>
+        </div>
+        <div class="hr"></div>
+        <div class="grid">
+          <div class="g-12"><strong>経過（理由・質問応答・所持品検査）</strong><br>${nl2br(esc(o.progress))}</div>
+        </div>
+        <div class="hr"></div>
+        <div class="grid">
+          <div class="g-12">関連事件番号：${esc(o.caseNo)}　証拠・写真管理：${esc(o.eviNo)}</div>
+          <div class="g-12">照会結果：${esc(o.result)}　措置：${esc(o.measure)}</div>
+        </div>
+        <div class="hr"></div>
+        <div class="grid">
+          <div class="g-12"><strong>手続チェック</strong>　標章呈示：${b(o.cShowID)}　目的告知：${b(o.cPurpose)}　任意性説明：${b(o.cVoluntary)}　同意確認：${b(o.cConsent)}　録音録画確認：${b(o.cRecord)}</div>
+          <div class="g-12"><strong>特記事項</strong><br>${nl2br(esc(o.note))}</div>
+        </div>`;
+      $('#previewBody').innerHTML = html;
+      $('#preview').style.display = 'block';
+      window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'});
+    }
+
+    // 保存/読込/他
+    function saveDraft(){ localStorage.setItem(LSKEY, JSON.stringify(toObj())); alert('下書きを保存しました'); }
+    function loadDraft(){
+      const raw=localStorage.getItem(LSKEY);
+      if(!raw){ alert('保存された下書きはありません'); return; }
+      applyObj(JSON.parse(raw));
+      $('#recordId').textContent='ID: ' + (JSON.parse(raw).recordId || genId());
+      calcDuration(); alert('下書きを読み込みました');
+    }
+    function clearAll(){
+      if(!confirm('すべての入力を消去します。よろしいですか？')) return;
+      fields.forEach(k=> $('#'+k).value=''); checks.forEach(k=> $('#'+k).checked=false);
+      setRecordId(); $('#preview').style.display='none';
+    }
+    function downloadJSON(){
+      const o=toObj(); if(!validate(o)) return;
+      const blob=new Blob([JSON.stringify(o,null,2)],{type:'application/json'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download=`${o.recordId}.json`; a.click(); URL.revokeObjectURL(a.href);
+    }
+    async function copyMD(){
+      const o=toObj(); if(!validate(o)) return;
+      const md=toMarkdown(o);
+      try{ await navigator.clipboard.writeText(md); alert('Markdownをコピーしました'); }
+      catch(e){ const ta=document.createElement('textarea'); ta.value=md; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert('Markdownをコピーしました（代替）'); }
+    }
+    async function downloadPNG(){
+      if($('#preview').style.display==='none'){ alert('先に「プレビュー/印刷」を押してください'); return; }
+      const node=$('#previewBody');
+      const prevBG=node.style.backgroundColor; node.style.backgroundColor='#ffffff';
+      const canvas=await html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true});
+      node.style.backgroundColor=prevBG;
+      const url=canvas.toDataURL('image/png');
+      const a=document.createElement('a'); a.href=url; a.download=`${$('#recordId').textContent.replace('ID: ','')}.png`; a.click();
+    }
+
+    // ===== 記入例テンプレート群 =====
+    const demoTemplates = {
+      nolight: () => ({
+        aff:'響野署 地域課', rank:'巡査長', name:'岩松 太郎', mates:'1名（佐藤 巡査）', unit:'響野21',
+        type:'職務質問', weather:'晴れ', place:'響野市中央1-2-3 ○○前 歩道上',
+        pName:'A（仮名）', pSex:'男', pAge:'19', pNat:'日本', pComp:'0', pJob:'学生', pContact:'090-XXXX-YYYY', pID:'学生証',
+        progress:`【観察事実・実施理由】
+23時50分頃、無灯火の自転車が蛇行していたため、停止を求め任意の職務質問を実施。
+
+【質問・回答の要旨（時系列）】
+Q：どこへ向かう？ → A：自宅へ帰宅中。
+身分証の提示を受け、氏名・住所を確認。危険物の所持は否定。
+
+【所持品検査】
+本人の同意を得て、バッグ内とポケット内を確認。危険物・違法物なし。`,
+        caseNo:'令和7年（フ）第123号', eviNo:'—', result:'異常なし', measure:'指導・警告',
+        cShowID:true, cPurpose:true, cVoluntary:true, cConsent:true, cRecord:false
+      }),
+      fight: () => ({
+        aff:'響野署 地域課', rank:'巡査', name:'岩松 太郎', mates:'1名', unit:'響野22',
+        type:'職務質問', weather:'曇り', place:'響野市駅前ロータリー',
+        pName:'B（仮名）', pSex:'男', pAge:'28', pNat:'日本', pComp:'1', pJob:'会社員', pContact:'—', pID:'運転免許証',
+        progress:`【観察事実・実施理由】
+駅前ロータリーで男女2名が口論、周囲に人だかり。騒然としていたため、双方を分離し職務質問を実施。
+
+【質問・回答の要旨（時系列）】
+双方の主張を個別に聴取。金銭貸借トラブルで、暴力行為は否定。双方に冷静化を促し、連絡先交換と民事調整を指導。
+
+【所持品検査】
+双方とも任意提示の手荷物を外観確認。危険物なし。`,
+        caseNo:'—', eviNo:'—', result:'異常なし', measure:'指導・警告',
+        cShowID:true, cPurpose:true, cVoluntary:true, cConsent:true, cRecord:false
+      }),
+      parking: () => ({
+        aff:'響野署 地域課', rank:'巡査長', name:'岩松 太郎', mates:'2名', unit:'響野31',
+        type:'職務質問', weather:'晴れ', place:'響野市桜丘2丁目 私道入口付近',
+        pName:'C（仮名）', pSex:'男', pAge:'45', pNat:'日本', pComp:'0', pJob:'会社員', pContact:'—', pID:'—',
+        progress:`【観察事実・実施理由】
+私道入口に車両が長時間停車との苦情で臨場。所有者とみられる男性に事情聴取。
+
+【質問・回答の要旨（時系列）】
+配達待ちで短時間停車との弁。近隣の通行支障を説明し移動を要請。男性は理解し直ちに移動。
+
+【所持品検査】
+不要。違法物の所持を否定。`,
+        caseNo:'—', eviNo:'—', result:'異常なし', measure:'指導・警告',
+        cShowID:true, cPurpose:true, cVoluntary:true, cConsent:false, cRecord:false
+      }),
+      noise: () => ({
+        aff:'響野署 地域課', rank:'巡査', name:'岩松 太郎', mates:'1名', unit:'響野25',
+        type:'職務質問', weather:'小雨', place:'響野市若葉町 マンション前',
+        pName:'D（仮名）', pSex:'女', pAge:'22', pNat:'日本', pComp:'2', pJob:'学生', pContact:'—', pID:'—',
+        progress:`【観察事実・実施理由】
+深夜の騒音苦情で臨場。マンション前で複数名が大声で談笑していたため注意指導。
+
+【質問・回答の要旨（時系列）】
+周辺は早朝勤務の住民が多い地域である点を説明。該当者らは謝罪し解散。揉め事なし。
+
+【所持品検査】
+不要。危険物所持の否定を確認。`,
+        caseNo:'—', eviNo:'—', result:'異常なし', measure:'指導・警告',
+        cShowID:true, cPurpose:true, cVoluntary:true, cConsent:false, cRecord:false
+      }),
+    };
+
+    function applyTemplate(key){
+      const tpl = demoTemplates[key]?.();
+      if(!tpl) return;
+      // 時刻は毎回現在時刻ベースで入れる
+      const now=new Date(); const end=new Date(now.getTime()+20*60000);
+      const iso=(d)=> new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+      tpl.tStart = iso(now); tpl.tEnd = iso(end);
+      applyObj(tpl);
+    }
+    function applyRandom(){
+      const keys = Object.keys(demoTemplates);
+      applyTemplate(keys[Math.floor(Math.random()*keys.length)]);
+    }
+    function clearDemo(){
+      ['place','weather','pName','pAge','pNat','pComp','pJob','pContact','pID','progress','caseNo','eviNo']
+        .forEach(id=> $('#'+id).value='');
+      $('#result').value='異常なし';
+      $('#measure').value='指導・警告';
+      ['cShowID','cPurpose','cVoluntary','cConsent','cRecord'].forEach(id=> $('#'+id).checked=false);
+    }
+
+    // イベント
+    $('#btnPreview').addEventListener('click', ()=>{ const o=toObj(); if(validate(o)) renderPreview(o); });
+    $('#btnSave').addEventListener('click', ()=>{ localStorage.setItem(LSKEY, JSON.stringify(toObj())); alert('下書きを保存しました'); });
+    $('#btnLoad').addEventListener('click', ()=>{
+      const raw=localStorage.getItem(LSKEY); if(!raw){ alert('保存された下書きはありません'); return; }
+      applyObj(JSON.parse(raw)); alert('下書きを読み込みました');
+    });
+    $('#btnClear').addEventListener('click', ()=>{
+      if(!confirm('すべての入力を消去します。よろしいですか？')) return;
+      fields.forEach(k=> $('#'+k).value=''); checks.forEach(k=> $('#'+k).checked=false);
+      setRecordId(); $('#preview').style.display='none';
+    });
+    $('#btnJSON').addEventListener('click', ()=>{
+      const o=toObj(); if(!validate(o)) return;
+      const blob=new Blob([JSON.stringify(o,null,2)],{type:'application/json'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`${o.recordId}.json`; a.click();
+    });
+    $('#btnMD').addEventListener('click', async ()=>{
+      const o=toObj(); if(!validate(o)) return;
+      const md=(function(o){ const b=x=>x?'✔':'—';
+        return `# 巡回・職務質問記録票（${o.recordId}）\n\n`+
+        `**所属**: ${o.aff}　**階級**: ${o.rank||''}　**氏名**: ${o.name}　**同行員**: ${o.mates||''}　**無線符号/車両**: ${o.unit||''}\n\n`+
+        `**実施区分**: ${o.type}　**開始**: ${o.tStart}　**終了**: ${o.tEnd||''}\n`+
+        `**場所**: ${o.place}　**天候**: ${o.weather||''}\n\n`+
+        `## 対象者\n氏名: ${o.pName||''}　性別: ${o.pSex||''}　年齢: ${o.pAge||''}　国籍: ${o.pNat||''}　同行者数: ${o.pComp||''}\n`+
+        `職業: ${o.pJob||''}　連絡先: ${o.pContact||''}　本人確認: ${o.pID||''}\n\n`+
+        `## 経過（理由・質問応答・所持品検査）\n${o.progress||''}\n\n`+
+        `## 照会・措置\n関連事件番号: ${o.caseNo||''}　証拠・写真管理: ${o.eviNo||''}\n`+
+        `照会結果: ${o.result||''}　措置: ${o.measure||''}\n\n`+
+        `## 手続チェック\n標章呈示:${b(o.cShowID)}  目的告知:${b(o.cPurpose)}  任意性説明:${b(o.cVoluntary)}  同意確認:${b(o.cConsent)}  録音録画確認:${b(o.cRecord)}\n\n`+
+        `## 特記事項\n${o.note||''}\n`; })(o);
+      try{ await navigator.clipboard.writeText(md); alert('Markdownをコピーしました'); }
+      catch(e){ const ta=document.createElement('textarea'); ta.value=md; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert('Markdownをコピーしました（代替）'); }
+    });
+    $('#btnPNG').addEventListener('click', async ()=>{
+      if($('#preview').style.display==='none'){ alert('先に「プレビュー/印刷」を押してください'); return; }
+      const node=$('#previewBody'); const prevBG=node.style.backgroundColor; node.style.backgroundColor='#ffffff';
+      const canvas=await html2canvas(node,{scale:2,backgroundColor:'#ffffff',useCORS:true}); node.style.backgroundColor=prevBG;
+      const url=canvas.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download=`${$('#recordId').textContent.replace('ID: ','')}.png`; a.click();
+    });
+
+    // 記入例UIイベント
+    $('#btnDemoApply').addEventListener('click', ()=> applyTemplate($('#demoSelect').value));
+    $('#btnDemoRandom').addEventListener('click', applyRandom);
+    $('#btnDemoClear').addEventListener('click', clearDemo);
+
+    // 初期化
+    setRecordId();
+    const now=new Date(); const isoLocal=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,16);
+    $('#tStart').value=isoLocal;
+  </script>
+</body>
+</html>
